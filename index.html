@@ -1,73 +1,596 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Prime Hindi</title>
-<style>
-/* Reset and full-screen setup */
-body, html {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    overflow: hidden;
-}
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>CricxCrate | Live Streaming</title>
+  <meta name="referrer" content="no-referrer">
 
-/* Container for the iframe */
-#container {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    background: #000;
-}
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.compiled.js" crossorigin="anonymous"></script>
 
-iframe {
-    width: 100%;
-    height: 100%;
-    border: none;
-}
+  <style>
+    :root {
+      --bg-main: #000000; 
+      --panel-bg: rgba(13, 17, 28, 0.75);
+      --panel-border: rgba(255, 255, 255, 0.08);
+      --premium-red: #FF0000; 
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --live-green: #10B981;
+      --panel-blur: blur(20px);
+      --plyr-color-main: #FF0000; 
+    }
 
-/* Banner styling */
-#wm {
-    position: fixed;           /* Always on top */
-    top: 12px;                 /* Distance from top */
-    right: 6px;                /* Distance from right */
-    z-index: 900;              /* Above iframe */
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(0,136,204,0.18);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(0,136,204,0.28);
-    padding: 6px 11px;
-    border-radius: 7px;
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-}
-</style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      -webkit-tap-highlight-color: transparent;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      overflow-x: hidden;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      flex: 1;
+    }
+
+    @media (min-width: 1024px) {
+      .app-wrapper {
+        padding: 24px 32px;
+      }
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 24px;
+        align-items: start;
+      }
+    }
+
+    .main-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      background: var(--panel-bg);
+      backdrop-filter: var(--panel-blur);
+      -webkit-backdrop-filter: var(--panel-blur);
+      border: 1px solid var(--panel-border);
+      border-radius: 14px;
+    }
+
+    .brand-zone {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo-dot {
+      height: 8px; width: 8px;
+      background: var(--premium-red);
+      border-radius: 50%;
+    }
+
+    .brand-zone h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .header-join-btn {
+      background: var(--premium-red);
+      color: #fff;
+      text-decoration: none;
+      padding: 7px 20px; 
+      border-radius: 9px;
+      font-size: 12px;
+      font-weight: 700;
+      transition: opacity 0.2s;
+    }
+
+    .header-join-btn:hover {
+      opacity: 0.9;
+    }
+
+    .presentation-space {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .video-viewport {
+      width: 100%;
+      aspect-ratio: 16/9; 
+      max-height: 80vh;
+      background: #000;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--panel-border);
+      position: relative;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .watermark-overlay {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      text-decoration: none;
+      z-index: 99;
+    }
+
+    .meta-card {
+      background: var(--panel-bg);
+      backdrop-filter: var(--panel-blur);
+      -webkit-backdrop-filter: var(--panel-blur);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .channel-info-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .channel-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .meta-card h2 {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: -0.3px;
+      color: #ffffff;
+    }
+
+    .mini-live-tag {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: var(--live-green);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .live-dot {
+      width: 4.5px; height: 4.5px;
+      background: var(--live-green);
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+
+    .channel-subtitle {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .lang-highlight {
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .control-space {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .premium-widget {
+      background: var(--panel-bg);
+      backdrop-filter: var(--panel-blur);
+      -webkit-backdrop-filter: var(--panel-blur);
+      border: 1px solid var(--panel-border);
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .premium-widget h3 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .premium-widget p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .btn-action-primary {
+      background: var(--premium-red);
+      color: #fff;
+      text-align: center;
+      padding: 14px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      width: 100%;
+      transition: opacity 0.2s;
+    }
+
+    .btn-action-primary:hover {
+      opacity: 0.9;
+    }
+
+    .utility-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .btn-utility {
+      background: var(--panel-bg);
+      backdrop-filter: var(--panel-blur);
+      -webkit-backdrop-filter: var(--panel-blur);
+      border: 1px solid var(--panel-border);
+      color: var(--text-primary);
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s;
+    }
+
+    .btn-utility:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .popup-overlay {
+      position: fixed; inset: 0; 
+      background: rgba(0, 0, 0, 0.95);
+      display: none; align-items: center; justify-content: center;
+      z-index: 99999; padding: 16px;
+      backdrop-filter: var(--panel-blur);
+      -webkit-backdrop-filter: var(--panel-blur);
+    }
+    .popup-overlay.visible { display: flex; }
+
+    .popup-card {
+      background: #0d111c;
+      border: 1px solid var(--panel-border);
+      border-radius: 24px; padding: 40px 24px; text-align: center;
+      width: 100%; max-width: 380px;
+    }
+
+    .popup-title { font-size: 2.2rem; font-weight: 800; margin-bottom: 12px; letter-spacing: -1px; }
+    .popup-p { color: var(--text-secondary); margin-bottom: 28px; font-size: 0.95rem; line-height: 1.55; }
+
+    .btn-popup-primary {
+      background: var(--premium-red);
+      color: #fff;
+      text-align: center;
+      padding: 16px 24px; 
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .already-joined-btn {
+      background: transparent; border: none;
+      color: rgba(255, 255, 255, 0.4); padding: 8px 16px; border-radius: 100px;
+      font-size: 0.78rem; font-weight: 600; margin-top: 18px; cursor: pointer;
+    }
+
+    .plyr--video {
+      border-radius: 16px !important;
+      height: 100% !important;
+      width: 100% !important;
+    }
+
+    footer { 
+      text-align: center; 
+      padding: 16px 0 8px; 
+      font-size: 0.8rem; 
+      width: 100%;
+    }
+    .foot-brand { font-weight: 800; font-size: 0.85rem; color: var(--text-primary); margin-top: 2px; }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- Stream iframe -->
-<div id="container">
-    <iframe 
-        src="https://offsideverse-ios.vercel.app/?url=https://grand-s-main.faggotsports.tv/out/v2/3a5b67d896f26d4ed700b86c64053eb7/index.m3u8" 
-        allow="encrypted-media; fullscreen" 
-        allowfullscreen>
-    </iframe>
+<div class="app-wrapper">
+  <header>
+    <div class="brand-zone">
+      <div class="brand-logo-dot"></div>
+      <h1>CricxCrate</h1>
+    </div>
+    <a href="https://t.me/+IuiGD8YsXwIxYjc9" target="_blank" class="header-join-btn">Join</a>
+  </header>
+
+  <div class="main-grid">
+
+    <div class="presentation-space">
+      <div class="video-viewport" id="playerContainer">
+        <a href="https://t.me/+IuiGD8YsXwIxYjc9" target="_blank" class="watermark-overlay">@CricxCrate</a>
+        <video id="player" playsinline crossorigin></video>
+      </div>
+
+      <div class="meta-card">
+        <div class="channel-info-wrapper">
+          <div class="channel-header-row">
+            <h2 id="channelNameDisplay">WILLOW BY CRICBUZZ</h2>
+            <div class="mini-live-tag">
+              <div class="live-dot"></div>
+              <span>Live</span>
+            </div>
+          </div>
+          <span class="channel-subtitle">Category : <span class="lang-highlight" id="langName">Sports</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-space">
+      <div class="premium-widget">
+        <h3>Join the Community Hub</h3>
+        <p>Live cricket match clips 🎥, backup streaming feeds ⚡ and ongoing sport broadcasts 🏆.</p>
+        <a href="https://t.me/+IuiGD8YsXwIxYjc9" class="btn-action-primary" target="_blank">Open Telegram Channel</a>
+      </div>
+
+      <div class="utility-grid">
+        <button class="btn-utility" id="btnShare">Share 📤</button>
+        <button class="btn-utility" id="btnCopy">Copy Link 🔗</button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p style="color: var(--text-secondary);">Made With ❤️ Made For You 🫶</p>
+    <p class="foot-brand">© CRICXCRATE</p>
+  </footer>
 </div>
 
-<!-- Banner -->
-<a href="https://t.me/+7VkflslOE9s4YjQ9" target="_blank" id="wm">
-@OffsideVerse
-</a>
+<div id="tgPopup" class="popup-overlay">
+  <div class="popup-card">
+    <div class="popup-title">WELCOME</div>
+    <p class="popup-p">Join on Telegram for live cricket match clips, exclusive highlights & updates 🎥🔥🚀</p>
+    <button class="btn-popup-primary" id="tgJoinBtn">JOIN</button>
+    <div>
+      <button class="already-joined-btn" id="tgCloseBtn">I'm already joined</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/plyr@3.7.8/dist/plyr.polyfilled.js"></script>
+
+<script>
+"use strict";
+
+const CONFIG = {
+  telegramLink: "https://t.me/+IuiGD8YsXwIxYjc9",
+  streamUrl: "https://otte-qw.live.pv-cdn.net/gru-nitro/live/clients/dash/enc/m6sqanvm2m/out/v1/f6beb46c6e9a4132ad739f3ca27df6aa/cenc.mpd",
+  clearKeys: {
+    "1444f4235529f183f0a5a486befe9cdb": "e5e3fec67a1bb3472a2089c8a0a2557f"
+  }
+};
+
+let plyrInstance = null;
+
+function initPlyr(videoEl, shakaPlayerInstance) {
+  if (plyrInstance) return;
+
+  const getQualityOptions = () => {
+    if (!shakaPlayerInstance) return [1080, 720, 480, 360];
+    const tracks = shakaPlayerInstance.getVariantTracks();
+    const heights = [...new Set(tracks.filter(t => t.type === 'video' && t.height).map(t => t.height))];
+    return heights.length ? heights.sort((a, b) => b - a) : [1080, 720, 480, 360];
+  };
+
+  plyrInstance = new Plyr(videoEl, {
+    autoplay: true,
+    controls: [
+      'play', 'progress', 'current-time', 'mute', 'volume', 'settings', 'fullscreen'
+    ],
+    settings: ['quality'],
+    quality: {
+      default: 720,
+      options: getQualityOptions(),
+      forced: true,
+      onChange: (newQuality) => {
+        if (!shakaPlayerInstance) return;
+        if (newQuality === 0) {
+          shakaPlayerInstance.configure({ abr: { enabled: true } });
+        } else {
+          shakaPlayerInstance.configure({ abr: { enabled: false } });
+          const tracks = shakaPlayerInstance.getVariantTracks();
+          const targetTrack = tracks.find(t => t.type === 'video' && t.height === newQuality);
+          if (targetTrack) {
+            shakaPlayerInstance.selectVariantTrack(targetTrack, true);
+          }
+        }
+      }
+    }
+  });
+
+  plyrInstance.on('enterfullscreen', () => {
+    if (screen.orientation && typeof screen.orientation.lock === 'function') {
+      screen.orientation.lock('landscape').catch(() => {});
+    }
+  });
+
+  plyrInstance.on('exitfullscreen', () => {
+    if (screen.orientation && typeof screen.orientation.unlock === 'function') {
+      screen.orientation.unlock().catch(() => {});
+    }
+  });
+
+  videoEl.playbackRate = 1.0;
+  videoEl.addEventListener('ratechange', () => {
+    if (videoEl.playbackRate !== 1.0 && !videoEl.paused) {
+      videoEl.playbackRate = 1.0;
+    }
+  });
+
+  shakaPlayerInstance.addEventListener('trackschanged', () => {
+    const updatedHeights = getQualityOptions();
+    if (updatedHeights.length && plyrInstance) {
+      plyrInstance.quality.options = updatedHeights;
+    }
+  });
+
+  setInterval(() => {
+    if (videoEl.paused && videoEl.readyState > 2) {
+      videoEl.play().catch(() => {});
+    }
+  }, 3000);
+
+  const triggerAudio = () => {
+    videoEl.muted = false;
+    videoEl.volume = 1;
+    document.removeEventListener("click", triggerAudio);
+    document.removeEventListener("touchstart", triggerAudio);
+  };
+  document.addEventListener("click", triggerAudio);
+  document.addEventListener("touchstart", triggerAudio);
+}
+
+async function startHLSEngine() {
+  shaka.polyfill.installAll();
+  if (!shaka.Player.isBrowserSupported()) return;
+
+  const video = document.getElementById("player");
+  const player = new shaka.Player(video);
+
+  player.configure({
+    drm: { 
+      clearKeys: CONFIG.clearKeys
+    },
+    manifest: { 
+      defaultPresentationDelay: 5,
+      dash: { ignoreMinBufferTime: true }
+    },
+    streaming: {
+      lowLatencyMode: true,
+      bufferingGoal: 6,
+      rebufferingGoal: 1,
+      safeSeekOffset: 2,
+      stallEnabled: true,
+      jumpLargeGaps: true
+    }
+  });
+
+  try {
+    await player.load(CONFIG.streamUrl);
+    video.playbackRate = 1.0;
+    video.play().catch(() => {});
+    initPlyr(video, player);
+  } catch (err) {
+    console.error("Stream initialization error:", err);
+  }
+}
+
+function initEvents() {
+  const handler = () => { navigator.clipboard.writeText(window.location.href); };
+  document.getElementById("btnShare").addEventListener("click", handler);
+  document.getElementById("btnCopy").addEventListener("click", handler);
+
+  document.getElementById("tgJoinBtn").addEventListener("click", () => {
+    window.open(CONFIG.telegramLink, "_blank");
+    document.getElementById("tgPopup").classList.remove("visible");
+    sessionStorage.setItem("crate_auth_pass", "true");
+    startHLSEngine();
+  });
+
+  document.getElementById("tgCloseBtn").addEventListener("click", () => {
+    document.getElementById("tgPopup").classList.remove("visible");
+    sessionStorage.setItem("crate_auth_pass", "true");
+    startHLSEngine();
+  });
+
+  if (sessionStorage.getItem("crate_auth_pass") === "true") {
+    document.getElementById("tgPopup").classList.remove("visible");
+    startHLSEngine();
+  } else {
+    document.getElementById("tgPopup").classList.add("visible");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initEvents);
+</script>
 
 </body>
 </html>
